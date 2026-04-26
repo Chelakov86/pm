@@ -6,20 +6,20 @@ Enrich this document to plan out each of these parts in detail, with substeps li
   - [x] Analyze the `frontend` directory.
   - [x] Create `frontend/AGENTS.md` describing existing code.
   - [x] Update `docs/PLAN.md` with checklists, tests, and success criteria.
-- [ ] Tests: Manual review of the document by the user.
-- [ ] Success Criteria: `docs/PLAN.md` has concrete checklists for all 10 parts, `frontend/AGENTS.md` exists, and the user approves.
+- [x] Tests: Manual review of the document by the user.
+- [x] Success Criteria: `docs/PLAN.md` has concrete checklists for all 10 parts, `frontend/AGENTS.md` exists, and the user approves.
 
 ## Part 2: Scaffolding
 Set up the Docker infrastructure, the backend in backend/ with FastAPI, and write the start and stop scripts in the scripts/ directory. This should serve example static HTML to confirm that a 'hello world' example works running locally and also make an API call.
-- [ ] Substeps:
-  - [ ] Create `Dockerfile` and `docker-compose.yml`.
-  - [ ] Create `backend/` directory with a basic FastAPI app.
-  - [ ] Use `uv` as the Python package manager in the Dockerfile.
-  - [ ] Serve a basic "Hello World" static HTML page at `/`.
-  - [ ] Add a dummy `/api/hello` endpoint.
-  - [ ] Create `scripts/start.sh`, `scripts/start.bat`, `scripts/stop.sh`, `scripts/stop.bat`.
-- [ ] Tests: Run start scripts, `curl http://localhost:8000/` returns the HTML, and `curl http://localhost:8000/api/hello` returns JSON.
-- [ ] Success Criteria: Start/stop scripts work on host machines, backend runs in Docker, endpoints respond successfully.
+- [x] Substeps:
+  - [x] Create `Dockerfile` and `docker-compose.yml`.
+  - [x] Create `backend/` directory with a basic FastAPI app.
+  - [x] Use `uv` as the Python package manager in the Dockerfile.
+  - [x] Serve a basic "Hello World" static HTML page at `/`.
+  - [x] Add a dummy `/api/hello` endpoint.
+  - [x] Create `scripts/start.sh`, `scripts/start.bat`, `scripts/stop.sh`, `scripts/stop.bat`.
+- [x] Tests: Run start scripts, `curl http://localhost:8000/` returns the HTML, and `curl http://localhost:8000/api/hello` returns JSON.
+- [x] Success Criteria: Start/stop scripts work on host machines, backend runs in Docker, endpoints respond successfully.
 
 ## Part 3: Add in Frontend
 Now update so that the frontend is statically built and served, so that the app has the demo Kanban board displayed at /. Comprehensive unit and integration tests.
