@@ -23,12 +23,12 @@ Set up the Docker infrastructure, the backend in backend/ with FastAPI, and writ
 
 ## Part 3: Add in Frontend
 Now update so that the frontend is statically built and served, so that the app has the demo Kanban board displayed at /. Comprehensive unit and integration tests.
-- [ ] Substeps:
-  - [ ] Adjust Next.js config to `output: 'export'`.
-  - [ ] Modify Dockerfile/docker-compose to build the Next.js app and copy `out` folder to the backend static directory.
-  - [ ] Update FastAPI to mount and serve the Next.js static build at `/`.
-- [ ] Tests: Run the container, navigate to `http://localhost:8000/` and see the Next.js Kanban demo rendering properly. Ensure all frontend unit/integration tests pass.
-- [ ] Success Criteria: Frontend is served correctly from the FastAPI backend without needing a separate dev server.
+- [x] Substeps:
+  - [x] Adjust Next.js config to `output: 'export'`.
+  - [x] Modify Dockerfile/docker-compose to build the Next.js app and copy `out` folder to the backend static directory.
+  - [x] Update FastAPI to mount and serve the Next.js static build at `/`.
+- [x] Tests: Run the container, navigate to `http://localhost:8000/` and see the Next.js Kanban demo rendering properly. Ensure all frontend unit/integration tests pass.
+- [x] Success Criteria: Frontend is served correctly from the FastAPI backend without needing a separate dev server.
 
 ## Part 4: Add in a fake user sign in experience
 Now update so that on first hitting /, you need to log in with dummy credentials ("user", "password") in order to see the Kanban, and you can log out. Comprehensive tests.
