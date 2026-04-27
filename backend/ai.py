@@ -4,7 +4,7 @@ from openai import OpenAI
 from typing import List, Dict, Any, Optional
 from schemas import AIChatResponse, ChatMessage
 
-MODEL = "google/gemini-2.5-flash-preview"
+MODEL = "openai/gpt-4o-mini"
 
 SYSTEM_PROMPT_TEMPLATE = """You are a helpful AI assistant for a Kanban board application called "Kanban Studio".
 You can help users manage their project by answering questions and optionally updating the board.

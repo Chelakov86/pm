@@ -1,15 +1,45 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { AuthProvider } from "@/lib/auth";
+import { initialData } from "@/lib/kanban";
 
-const renderBoard = () => {
+/**
+ * Mock fetch to return the initial board data (simulating GET /api/board)
+ * and to accept PUT /api/board silently.
+ */
+const mockFetch = vi.fn((url: string, opts?: RequestInit) => {
+  if (url === "/api/board" && (!opts || opts.method === undefined || opts.method === "GET")) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, user_id: 1, state: initialData }),
+    });
+  }
+  if (url === "/api/board" && opts?.method === "PUT") {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, user_id: 1, state: JSON.parse(opts.body as string).state }),
+    });
+  }
+  // AI chat endpoint — not exercised in these tests
+  return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+});
+
+const renderBoard = async () => {
   localStorage.setItem("kanban_auth", "true");
-  return render(
-    <AuthProvider>
-      <KanbanBoard />
-    </AuthProvider>
-  );
+  let result;
+  await act(async () => {
+    result = render(
+      <AuthProvider>
+        <KanbanBoard />
+      </AuthProvider>
+    );
+  });
+  // Wait for loading to finish and columns to appear
+  await waitFor(() => {
+    expect(screen.getAllByTestId(/column-/i).length).toBeGreaterThan(0);
+  });
+  return result;
 };
 
 const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
@@ -17,15 +47,21 @@ const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
 describe("KanbanBoard", () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.stubGlobal("fetch", mockFetch);
+    mockFetch.mockClear();
   });
 
-  it("renders five columns", () => {
-    renderBoard();
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders five columns", async () => {
+    await renderBoard();
     expect(screen.getAllByTestId(/column-/i)).toHaveLength(5);
   });
 
   it("renames a column", async () => {
-    renderBoard();
+    await renderBoard();
     const column = getFirstColumn();
     const input = within(column).getByLabelText("Column title");
     await userEvent.clear(input);
@@ -34,7 +70,7 @@ describe("KanbanBoard", () => {
   });
 
   it("adds and removes a card", async () => {
-    renderBoard();
+    await renderBoard();
     const column = getFirstColumn();
     const addButton = within(column).getByRole("button", {
       name: /add a card/i,
@@ -58,8 +94,8 @@ describe("KanbanBoard", () => {
     expect(within(column).queryByText("New card")).not.toBeInTheDocument();
   });
 
-  it("shows a sign out button", () => {
-    renderBoard();
+  it("shows a sign out button", async () => {
+    await renderBoard();
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
   });
 });

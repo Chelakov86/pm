@@ -89,10 +89,10 @@ Now allow the backend to make an AI call via OpenRouter. Test connectivity with 
 - [x] Success Criteria: AI can reliably ingest the board state, reason about it, and return structurally valid JSON updates.
 
 ## Part 10: Now add a beautiful sidebar widget to the UI supporting full AI chat, and allowing the LLM (as it determines) to update the Kanban based on its Structured Outputs. If the AI updates the Kanban, then the UI should refresh automatically.
-- [ ] Substeps:
-  - [ ] Create a chat sidebar component in the frontend.
-  - [ ] Implement a message feed (user vs AI messages).
-  - [ ] Connect chat input to `POST /api/ai/chat`.
-  - [ ] If the API response includes a board update, automatically set the React board state to reflect the changes seamlessly.
-- [ ] Tests: Ask the AI via UI to move a card. The card should move instantly in the UI once the AI responds.
-- [ ] Success Criteria: The user experiences a cohesive, "magical" workflow where conversing with the AI updates the application visually and persistently.
+- [x] Substeps:
+  - [x] Create a chat sidebar component in the frontend.
+  - [x] Implement a message feed (user vs AI messages).
+  - [x] Connect chat input to `POST /api/ai/chat`.
+  - [x] If the API response includes a board update, automatically set the React board state to reflect the changes seamlessly.
+- [x] Tests: Ask the AI via UI to move a card. The card should move instantly in the UI once the AI responds.
+- [x] Success Criteria: The user experiences a cohesive, "magical" workflow where conversing with the AI updates the application visually and persistently.
