@@ -62,12 +62,12 @@ Now add API routes to allow the backend to read and change the Kanban for a give
 
 ## Part 7: Frontend + Backend
 Now have the frontend actually use the backend API, so that the app is a proper persistent Kanban board. Test very throughly.
-- [ ] Substeps:
-  - [ ] Replace `initialData` in frontend with an API call to `GET /api/board` on mount.
-  - [ ] Update `KanbanBoard` state handlers (drag, add, delete, rename) to call `PUT /api/board` with the new state.
-  - [ ] Handle loading and error states in the UI.
-- [ ] Tests: Open app, move a card, reload page -> the card should remain in the new position. Add a card, reload -> card persists.
-- [ ] Success Criteria: The UI acts as a fully functional, persistent Kanban board backed by the database.
+- [x] Substeps:
+  - [x] Replace `initialData` in frontend with an API call to `GET /api/board` on mount.
+  - [x] Update `KanbanBoard` state handlers (drag, add, delete, rename) to call `PUT /api/board` with the new state.
+  - [x] Handle loading and error states in the UI.
+- [x] Tests: Open app, move a card, reload page -> the card should remain in the new position. Add a card, reload -> card persists.
+- [x] Success Criteria: The UI acts as a fully functional, persistent Kanban board backed by the database.
 
 ## Part 8: AI connectivity
 Now allow the backend to make an AI call via OpenRouter. Test connectivity with a simple "2+2" test and ensure the AI call is working.
