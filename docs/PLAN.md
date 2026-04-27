@@ -32,13 +32,13 @@ Now update so that the frontend is statically built and served, so that the app 
 
 ## Part 4: Add in a fake user sign in experience
 Now update so that on first hitting /, you need to log in with dummy credentials ("user", "password") in order to see the Kanban, and you can log out. Comprehensive tests.
-- [ ] Substeps:
-  - [ ] Create a Login page/component on the frontend.
-  - [ ] Implement fake auth logic (hardcoded "user"/"password").
-  - [ ] Save login state (e.g. in localStorage or Context).
-  - [ ] Add a "Log out" button on the Kanban board view.
-- [ ] Tests: Accessing `/` unauthenticated shows login. Invalid credentials fail. Valid credentials show Kanban. Logout returns to login.
-- [ ] Success Criteria: User cannot see the board without authenticating with dummy credentials.
+- [x] Substeps:
+  - [x] Create a Login page/component on the frontend.
+  - [x] Implement fake auth logic (hardcoded "user"/"password").
+  - [x] Save login state (e.g. in localStorage or Context).
+  - [x] Add a "Log out" button on the Kanban board view.
+- [x] Tests: Accessing `/` unauthenticated shows login. Invalid credentials fail. Valid credentials show Kanban. Logout returns to login.
+- [x] Success Criteria: User cannot see the board without authenticating with dummy credentials.
 
 ## Part 5: Database modeling
 Now propose a database schema for the Kanban, saving it as JSON. Document the database approach in docs/ and get user sign off.
