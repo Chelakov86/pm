@@ -71,12 +71,12 @@ Now have the frontend actually use the backend API, so that the app is a proper 
 
 ## Part 8: AI connectivity
 Now allow the backend to make an AI call via OpenRouter. Test connectivity with a simple "2+2" test and ensure the AI call is working.
-- [ ] Substeps:
-  - [ ] Add `openai` or `requests` library to the Python backend to call OpenRouter.
-  - [ ] Load `OPENROUTER_API_KEY` from `.env`.
-  - [ ] Create a test endpoint `GET /api/ai/test` that asks the LLM a simple question (e.g. "What is 2+2?").
-- [ ] Tests: `curl http://localhost:8000/api/ai/test` returns "4" (or similar expected AI response).
-- [ ] Success Criteria: OpenRouter API key is validated and backend can successfully communicate with the LLM.
+- [x] Substeps:
+  - [x] Add `openai` or `requests` library to the Python backend to call OpenRouter.
+  - [x] Load `OPENROUTER_API_KEY` from `.env`.
+  - [x] Create a test endpoint `GET /api/ai/test` that asks the LLM a simple question (e.g. "What is 2+2?").
+- [x] Tests: `curl http://localhost:8000/api/ai/test` returns "4" (or similar expected AI response).
+- [x] Success Criteria: OpenRouter API key is validated and backend can successfully communicate with the LLM.
 
 ## Part 9: Now extend the backend call so that it always calls the AI with the JSON of the Kanban board, plus the user's question (and conversation history). The AI should respond with Structured Outputs that includes the response to the user and optionaly an update to the Kanban. Test thoroughly.
 - [ ] Substeps:

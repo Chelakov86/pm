@@ -3,3 +3,5 @@ uvicorn
 sqlalchemy
 pytest
 httpx
+openai
+python-dotenv

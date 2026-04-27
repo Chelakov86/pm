@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="../.env")
+
 from fastapi import FastAPI, Depends, HTTPException
 import os
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import models, schemas
 from database import engine, get_db
+import ai
 
 # Create all database tables
 models.Base.metadata.create_all(bind=engine)
@@ -42,6 +46,11 @@ def get_current_user(db: Session = Depends(get_db)):
 @app.get("/api/hello")
 def read_hello():
     return {"message": "Hello World"}
+
+@app.get("/api/ai/test")
+def ai_test():
+    answer = ai.ask("What is 2+2? Reply with just the number.")
+    return {"response": answer}
 
 @app.get("/api/board", response_model=schemas.BoardResponse)
 def get_board(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
