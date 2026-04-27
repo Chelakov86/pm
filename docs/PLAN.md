@@ -52,13 +52,13 @@ Now propose a database schema for the Kanban, saving it as JSON. Document the da
 
 ## Part 6: Backend
 Now add API routes to allow the backend to read and change the Kanban for a given user; test this thoroughly with backend unit tests. The database should be created if it doesn't exist.
-- [ ] Substeps:
-  - [ ] Set up SQLite connection and automatic table creation on startup.
-  - [ ] Create `GET /api/board` to fetch the board for the logged-in user.
-  - [ ] Create `PUT /api/board` to update the user's board.
-  - [ ] Write backend unit tests using FastAPI `TestClient`.
-- [ ] Tests: Automated unit tests verify CRUD operations on the SQLite database using valid and invalid inputs.
-- [ ] Success Criteria: Backend can persist and retrieve Kanban data for the hardcoded user.
+- [x] Substeps:
+  - [x] Set up SQLite connection and automatic table creation on startup.
+  - [x] Create `GET /api/board` to fetch the board for the logged-in user.
+  - [x] Create `PUT /api/board` to update the user's board.
+  - [x] Write backend unit tests using FastAPI `TestClient`.
+- [x] Tests: Automated unit tests verify CRUD operations on the SQLite database using valid and invalid inputs.
+- [x] Success Criteria: Backend can persist and retrieve Kanban data for the hardcoded user.
 
 ## Part 7: Frontend + Backend
 Now have the frontend actually use the backend API, so that the app is a proper persistent Kanban board. Test very throughly.
