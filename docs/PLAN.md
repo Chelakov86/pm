@@ -43,12 +43,12 @@ Now update so that on first hitting /, you need to log in with dummy credentials
 ## Part 5: Database modeling
 Now propose a database schema for the Kanban, saving it as JSON. Document the database approach in docs/ and get user sign off.
 - [ ] Substeps:
-  - [ ] Create a `Users` table and a `Boards` table in SQLite.
-  - [ ] The `Boards` table will store the Kanban state as a JSON column.
-  - [ ] Document the schema and the rationale in `docs/DATABASE.md`.
-  - [ ] Wait for user approval before implementing.
-- [ ] Tests: N/A (Documentation phase).
-- [ ] Success Criteria: User signs off on the SQLite + JSON approach.
+  - [x] Create a `Users` table and a `Boards` table in SQLite.
+  - [x] The `Boards` table will store the Kanban state as a JSON column.
+  - [x] Document the schema and the rationale in `docs/DATABASE.md`.
+  - [x] Wait for user approval before implementing.
+- [x] Tests: N/A (Documentation phase).
+- [x] Success Criteria: User signs off on the SQLite + JSON approach.
 
 ## Part 6: Backend
 Now add API routes to allow the backend to read and change the Kanban for a given user; test this thoroughly with backend unit tests. The database should be created if it doesn't exist.
