@@ -79,14 +79,14 @@ Now allow the backend to make an AI call via OpenRouter. Test connectivity with 
 - [x] Success Criteria: OpenRouter API key is validated and backend can successfully communicate with the LLM.
 
 ## Part 9: Now extend the backend call so that it always calls the AI with the JSON of the Kanban board, plus the user's question (and conversation history). The AI should respond with Structured Outputs that includes the response to the user and optionaly an update to the Kanban. Test thoroughly.
-- [ ] Substeps:
-  - [ ] Define a Pydantic schema for the LLM Structured Output (e.g., `{ "message": "string", "board_update": Optional[BoardData] }`).
-  - [ ] Create `POST /api/ai/chat` endpoint taking the user's message and chat history.
-  - [ ] In the endpoint, append the current database Kanban JSON to the system prompt.
-  - [ ] Parse the AI's response, and if `board_update` is present, update the SQLite database.
-  - [ ] Write tests to simulate a chat message and verify AI output formatting.
-- [ ] Tests: Send a prompt like "Add a card for 'Write Docs' to the Backlog". Verify the API returns a success message AND the database is updated.
-- [ ] Success Criteria: AI can reliably ingest the board state, reason about it, and return structurally valid JSON updates.
+- [x] Substeps:
+  - [x] Define a Pydantic schema for the LLM Structured Output (e.g., `{ "message": "string", "board_update": Optional[BoardData] }`).
+  - [x] Create `POST /api/ai/chat` endpoint taking the user's message and chat history.
+  - [x] In the endpoint, append the current database Kanban JSON to the system prompt.
+  - [x] Parse the AI's response, and if `board_update` is present, update the SQLite database.
+  - [x] Write tests to simulate a chat message and verify AI output formatting.
+- [x] Tests: Send a prompt like "Add a card for 'Write Docs' to the Backlog". Verify the API returns a success message AND the database is updated.
+- [x] Success Criteria: AI can reliably ingest the board state, reason about it, and return structurally valid JSON updates.
 
 ## Part 10: Now add a beautiful sidebar widget to the UI supporting full AI chat, and allowing the LLM (as it determines) to update the Kanban based on its Structured Outputs. If the AI updates the Kanban, then the UI should refresh automatically.
 - [ ] Substeps:

@@ -71,6 +71,43 @@ def update_board(board_update: schemas.BoardStateUpdate, user: models.User = Dep
     db.refresh(board)
     return board
 
+@app.post("/api/ai/chat", response_model=schemas.ChatApiResponse)
+def ai_chat(
+    chat_request: schemas.ChatRequest,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Chat with the AI assistant. The AI sees the current board state and can optionally update it."""
+    # 1. Load the current board state from the database
+    board = db.query(models.Board).filter(models.Board.user_id == user.id).first()
+    board_state = board.state if board else {"columns": [], "cards": {}}
+
+    # 2. Call the AI with the board state, user message, and conversation history
+    try:
+        ai_response = ai.chat_with_board(
+            board_state=board_state,
+            user_message=chat_request.message,
+            history=chat_request.history,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
+
+    # 3. If the AI returned a board update, persist it to the database
+    result = schemas.ChatApiResponse(message=ai_response.message)
+
+    if ai_response.board_update is not None:
+        new_state = ai_response.board_update.model_dump()
+        if board:
+            board.state = new_state
+        else:
+            board = models.Board(user_id=user.id, state=new_state)
+            db.add(board)
+        db.commit()
+        db.refresh(board)
+        result.board_update = new_state
+
+    return result
+
 frontend_build_dir = "/frontend-build"
 local_build_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "out")
 
