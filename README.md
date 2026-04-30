@@ -76,3 +76,37 @@ Kanban Studio is built as a modular full-stack application.
 - **Backend:** FastAPI (Python 3.11), SQLAlchemy ORM, Pydantic (Structured Outputs).
 - **AI Integration:** OpenRouter (OpenAI SDK compatibility) with structured JSON responses.
 - **Persistence:** SQLite database (`kanban.db`).
+
+## Development Guide
+
+If you prefer to run the components manually without Docker:
+
+### Backend Setup
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run build # Exports static files to /out
+```
+
+## Command Reference
+
+| Context | Command | Description |
+| :--- | :--- | :--- |
+| **Backend** | `cd backend && pytest` | Run all Python tests |
+| **Frontend** | `cd frontend && npm run test` | Run Vitest unit tests |
+| **Frontend** | `cd frontend && npm run test:e2e` | Run Playwright E2E tests |
+| **Frontend** | `cd frontend && npm run lint` | Run ESLint check |
+
+## Documentation
+
+For deeper dives into specific areas, see:
+- [Original Project Plan](./docs/PLAN.md)
+- [Database Schema](./docs/DATABASE.md)
+- [Architecture Details](./CLAUDE.md)
