@@ -19,3 +19,60 @@ Kanban Studio is a persistent task management tool that combines a visual drag-a
 - **✋ Visual Drag-and-Drop:** Intuitive task management powered by `@dnd-kit`.
 - **💾 Persistent Storage:** All changes are saved to a local SQLite database, ensuring your data survives restarts.
 - **🐳 Dockerized:** One command to start the entire full-stack application (FastAPI backend + Next.js frontend).
+
+## Quick Start
+
+The fastest way to get Kanban Studio running is using Docker.
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/get-started) and Docker Compose.
+- An **OpenRouter API Key**. Get one at [openrouter.ai](https://openrouter.ai/).
+
+### Launching the App
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd pm
+   ```
+
+2. **Configure Environment:**
+   Create a `.env` file in the project root:
+   ```bash
+   OPENROUTER_API_KEY=your_api_key_here
+   ```
+
+3. **Start the Application:**
+   ```bash
+   # On Linux or Mac:
+   ./scripts/start.sh
+
+   # On Windows (PowerShell/CMD):
+   scripts\start.bat
+   ```
+
+4. **Access the Board:**
+   Open `http://localhost:8000` in your browser.
+   Log in with:
+   - **Username:** `user`
+   - **Password:** `password`
+
+## Technical Architecture
+
+Kanban Studio is built as a modular full-stack application.
+
+```text
+[ Frontend (Next.js) ] <---> [ Backend (FastAPI) ] <---> [ Database (SQLite) ]
+                                        ^
+                                        |
+                                        v
+                               [ AI (OpenRouter) ]
+```
+
+### Tech Stack
+
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, @dnd-kit.
+- **Backend:** FastAPI (Python 3.11), SQLAlchemy ORM, Pydantic (Structured Outputs).
+- **AI Integration:** OpenRouter (OpenAI SDK compatibility) with structured JSON responses.
+- **Persistence:** SQLite database (`kanban.db`).
