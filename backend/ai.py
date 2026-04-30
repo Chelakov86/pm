@@ -61,6 +61,18 @@ def ask(question: str) -> str:
     return response.choices[0].message.content
 
 
+def strip_markdown_json(text: str) -> str:
+    """Strip markdown code block formatting if present."""
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
 def chat_with_board(
     board_state: Dict[str, Any],
     user_message: str,
@@ -95,7 +107,17 @@ def chat_with_board(
 
     raw_content = response.choices[0].message.content
     print(f"DEBUG: raw_content: {raw_content}")
-    parsed = json.loads(raw_content)
+    
+    cleaned_content = strip_markdown_json(raw_content)
+    try:
+        parsed = json.loads(cleaned_content)
+    except json.JSONDecodeError as e:
+        print(f"DEBUG: Failed to parse JSON: {e} - Raw content: {cleaned_content}")
+        # Fallback to a safe error message if JSON parsing fails completely
+        parsed = {
+            "message": "I encountered an error parsing the response from the AI. Please try again.",
+            "board_update": None
+        }
     
     # AIChatResponse pydantic model expects board_update to be a BoardData object or None
     # If the LLM returned null or something else, handle it.
