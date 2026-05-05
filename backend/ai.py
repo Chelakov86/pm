@@ -1,5 +1,6 @@
 import os
 import json
+from fastapi import HTTPException
 from openai import OpenAI
 from typing import List, Dict, Any, Optional
 from schemas import AIChatResponse, ChatMessage
@@ -102,8 +103,17 @@ def chat_with_board(
             response_format={"type": "json_object"},
         )
     except Exception as e:
-        print(f"DEBUG: AI call failed: {str(e)}")
-        raise e
+        # Distinguish between common error types if possible
+        error_msg = str(e)
+        if "rate limit" in error_msg.lower():
+            print(f"DEBUG: AI Rate limit hit: {error_msg}")
+            raise HTTPException(status_code=429, detail="AI service rate limit exceeded. Please try again later.")
+        elif "authentication" in error_msg.lower() or "api key" in error_msg.lower():
+            print(f"DEBUG: AI Authentication error: {error_msg}")
+            raise HTTPException(status_code=500, detail="AI service authentication failed.")
+        else:
+            print(f"DEBUG: AI call failed: {error_msg}")
+            raise HTTPException(status_code=502, detail=f"AI service error: {error_msg}")
 
     raw_content = response.choices[0].message.content
     print(f"DEBUG: raw_content: {raw_content}")
