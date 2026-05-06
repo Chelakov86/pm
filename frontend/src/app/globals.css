@@ -181,3 +181,26 @@ body {
   border-color: var(--secondary-purple);
   color: #fff;
 }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--stroke);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-text);
+}
+
+.kanban-container {
+  scrollbar-gutter: stable;
+}
