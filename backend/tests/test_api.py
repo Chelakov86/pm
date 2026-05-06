@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 import pytest
 
@@ -7,38 +7,45 @@ from main import app, get_db
 from database import Base
 from models import User, Board
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Use in-memory database for testing
+SQLALCHEMY_DATABASE_URL = "sqlite://"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base.metadata.create_all(bind=engine)
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-@pytest.fixture(autouse=True)
-def setup_db():
-    Base.metadata.drop_all(bind=engine)
+@pytest.fixture(name="db_session")
+def db_session_fixture():
     Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
+    
     # Create the initial dummy user to simulate startup behavior
     user = User(username="user")
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    db.close()
+    session.add(user)
+    session.commit()
+
+    yield session
+    
+    session.close()
+    transaction.rollback()
+    connection.close()
+    Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture(autouse=True)
+def override_db(db_session):
+    def get_db_override():
+        yield db_session
+    
+    app.dependency_overrides[get_db] = get_db_override
     yield
+    del app.dependency_overrides[get_db]
+
+client = TestClient(app)
 
 def test_read_hello():
     response = client.get("/api/hello")

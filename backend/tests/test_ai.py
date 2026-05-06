@@ -29,5 +29,5 @@ def test_ai_test_endpoint():
 
         mock_client.chat.completions.create.assert_called_once()
         call_kwargs = mock_client.chat.completions.create.call_args
-        assert call_kwargs.kwargs["model"] == "openrouter/auto-free"
+        assert call_kwargs.kwargs["model"] == "openrouter/free"
         assert "2+2" in call_kwargs.kwargs["messages"][0]["content"]

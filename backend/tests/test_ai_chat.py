@@ -10,7 +10,7 @@ Covers:
 import json
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 import pytest
 
@@ -20,25 +20,14 @@ from models import User, Board
 from schemas import AIChatResponse, BoardData, ColumnData, CardData
 
 # ---- Test database setup ----
-# Use the same test.db as other test files to avoid dependency override conflicts
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Use in-memory database for testing
+SQLALCHEMY_DATABASE_URL = "sqlite://"
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
-
 
 SAMPLE_BOARD_STATE = {
     "columns": [
@@ -54,23 +43,39 @@ SAMPLE_BOARD_STATE = {
     },
 }
 
+@pytest.fixture(name="db_session")
+def db_session_fixture():
+    Base.metadata.create_all(bind=engine)
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
+    
+    # Fresh database and seeded user + board for every test.
+    user = User(username="user")
+    session.add(user)
+    session.commit()
+    
+    board = Board(user_id=user.id, state=SAMPLE_BOARD_STATE)
+    session.add(board)
+    session.commit()
+
+    yield session
+    
+    session.close()
+    transaction.rollback()
+    connection.close()
+    Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture(autouse=True)
-def setup_db():
-    """Fresh database and seeded user + board for every test."""
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    user = User(username="user")
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    board = Board(user_id=user.id, state=SAMPLE_BOARD_STATE)
-    db.add(board)
-    db.commit()
-    db.close()
+def override_db(db_session):
+    def get_db_override():
+        yield db_session
+    
+    app.dependency_overrides[get_db] = get_db_override
     yield
+    del app.dependency_overrides[get_db]
 
+client = TestClient(app)
 
 # ---- Helper to build a mock AI response ----
 
