@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { MoreVertical } from "lucide-react";
 import type { Card, Column } from "@/lib/kanban";
 import { KanbanCard } from "@/components/KanbanCard";
 import { NewCardForm } from "@/components/NewCardForm";
@@ -31,21 +32,21 @@ export const KanbanColumn = ({
       )}
       data-testid={`column-${column.id}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="w-full">
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-10 rounded-full bg-[var(--accent-yellow)]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-              {cards.length} cards
-            </span>
-          </div>
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div className="flex-1 flex items-center gap-3 min-w-0">
           <input
             value={column.title}
             onChange={(event) => onRename(column.id, event.target.value)}
-            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
+            className="bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none truncate focus:ring-2 ring-[var(--primary-blue)] rounded px-1 -ml-1 transition-all"
             aria-label="Column title"
           />
+          <span className="px-2 py-0.5 rounded-full bg-[var(--surface)] border border-[var(--stroke)] text-[10px] font-bold text-[var(--gray-text)] uppercase tracking-wider">
+            {cards.length}
+          </span>
         </div>
+        <button className="p-1.5 rounded-lg text-[var(--gray-text)] hover:bg-[var(--surface)] transition-colors">
+          <MoreVertical size={16} />
+        </button>
       </div>
       <div className="mt-4 flex flex-1 flex-col gap-3">
         <SortableContext items={column.cardIds} strategy={verticalListSortingStrategy}>
