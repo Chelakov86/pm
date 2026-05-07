@@ -3,6 +3,6 @@ uvicorn
 sqlalchemy
 pytest
 httpx
-openai
+openai==2.11.0
 python-dotenv
 slowapi
