@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // jsdom does not implement scrollIntoView — stub it to prevent errors
 // in components like AiChatSidebar that auto-scroll a message feed.
@@ -23,7 +24,7 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(global, "localStorage", {
+Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
   writable: true,
 });

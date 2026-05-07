@@ -154,12 +154,12 @@ def chat_with_board(
         
     try:
         return AIChatResponse(
-            message=parsed.get("message", "I processed your request."),
+            message=str(parsed.get("message") or "I processed your request."),
             board_update=parsed.get("board_update")
         )
     except Exception as e:
         print(f"DEBUG: Validation error for AIChatResponse: {e}")
         return AIChatResponse(
-            message="The AI suggested changes that don't fit the board structure. I've ignored the update, but here was the message: " + parsed.get("message", ""),
+            message="The AI suggested changes that don't fit the board structure. I've ignored the update, but here was the message: " + (parsed.get("message") or ""),
             board_update=None
         )
