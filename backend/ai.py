@@ -5,8 +5,8 @@ from openai import OpenAI
 from typing import List, Dict, Any, Optional
 from schemas import AIChatResponse, ChatMessage
 
-# OpenRouter's auto model picker (free models only)
-MODEL = "openrouter/free"
+# OpenRouter model (free OSS model)
+MODEL = "openai/gpt-oss-120b:free"
 
 SYSTEM_PROMPT_TEMPLATE = """You are a helpful AI assistant for a Kanban board application called "Kanban Studio".
 You can help users manage their project by answering questions and optionally updating the board.

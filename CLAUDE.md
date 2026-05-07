@@ -98,7 +98,7 @@ npm run lint
 
 - `.env` file in project root with `OPENROUTER_API_KEY=...`
 - Backend reads this via `python-dotenv` (loads from `../.env`)
-- AI model: `openrouter/auto` (OpenRouter's automatic model selection)
+- AI model: `openai/gpt-oss-120b:free` (OpenRouter free OSS model)
 
 ## Key Details
 
