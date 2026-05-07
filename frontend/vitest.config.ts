@@ -13,6 +13,11 @@ export default defineConfig({
     },
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "tests"],
+    server: {
+      deps: {
+        inline: ["lucide-react"],
+      },
+    },
   },
   resolve: {
     alias: {

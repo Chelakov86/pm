@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv(dotenv_path="../.env")
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +11,9 @@ from database import engine, get_db, SessionLocal
 import ai
 
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Create all database tables
 models.Base.metadata.create_all(bind=engine)
@@ -39,7 +42,13 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown: any cleanup if needed
 
+limiter = Limiter(
+    key_func=get_remote_address,
+    enabled=os.environ.get("TESTING") != "1"
+)
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,7 +94,9 @@ def update_board(board_update: schemas.BoardStateUpdate, user: models.User = Dep
     return board
 
 @app.post("/api/ai/chat", response_model=schemas.ChatApiResponse)
+@limiter.limit("5/minute")
 def ai_chat(
+    request: Request,
     chat_request: schemas.ChatRequest,
     user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -135,4 +146,3 @@ else:
     @app.get("/")
     def read_root():
         return {"message": "Frontend build not found. Run 'npm run build' in the frontend directory."}
-

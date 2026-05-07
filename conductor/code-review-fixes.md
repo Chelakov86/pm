@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `backend/main.py`
 
-- [ ] **Step 1: Update imports in `backend/main.py`**
+- [x] **Step 1: Update imports in `backend/main.py`**
 
 Add `SessionLocal` to the database imports, and `CORSMiddleware` to the FastAPI imports.
 
@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, SessionLocal
 ```
 
-- [ ] **Step 2: Add CORS Middleware**
+- [x] **Step 2: Add CORS Middleware**
 
 Configure CORS right after creating the FastAPI app instance.
 
@@ -42,7 +42,7 @@ app.add_middleware(
 )
 ```
 
-- [ ] **Step 3: Refactor `on_startup`**
+- [x] **Step 3: Refactor `on_startup`**
 
 Replace the problematic `next(get_db())` with a proper context manager using `SessionLocal`.
 
@@ -58,7 +58,7 @@ def on_startup():
 **Files:**
 - Modify: `backend/ai.py`
 
-- [ ] **Step 1: Add a markdown stripping helper**
+- [x] **Step 1: Add a markdown stripping helper**
 
 Add a function to clean up potential markdown formatting from LLM responses before parsing.
 
@@ -77,7 +77,7 @@ def strip_markdown_json(text: str) -> str:
     return text.strip()
 ```
 
-- [ ] **Step 2: Enhance exception handling and parsing in `chat_with_board`**
+- [x] **Step 2: Enhance exception handling and parsing in `chat_with_board`**
 
 Refactor the `chat_with_board` function to handle JSON decode errors gracefully and apply the stripping helper.
 
@@ -109,7 +109,7 @@ Refactor the `chat_with_board` function to handle JSON decode errors gracefully 
 **Files:**
 - Create: `frontend/src/lib/useKanbanBoard.ts`
 
-- [ ] **Step 1: Create the hook definition**
+- [x] **Step 1: Create the hook definition**
 
 Create the new file and migrate state, fetch logic, and optimistic updates.
 
@@ -118,182 +118,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { initialData, moveCard, createId, type BoardData } from "@/lib/kanban";
 
 export function useKanbanBoard() {
-  const [board, setBoard] = useState<BoardData>(initialData);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const fetchBoard = async () => {
-      try {
-        const response = await fetch("/api/board");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.state && Array.isArray(data.state.columns) && data.state.columns.length > 0) {
-            setBoard(data.state);
-          } else {
-            setBoard(initialData);
-            await fetch("/api/board", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state: initialData })
-            });
-          }
-        } else {
-          setBoard(initialData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch board:", err);
-        setError("Failed to load board data.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchBoard();
-  }, []);
-
-  const updateBoard = useCallback(async (newBoard: BoardData, previousBoard: BoardData) => {
-    // Debounce the actual API call
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      timeoutRef.current = setTimeout(async () => {
-        try {
-          const response = await fetch("/api/board", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: newBoard }),
-          });
-          if (!response.ok) {
-            console.error("Failed to update board");
-            setError("Failed to save changes.");
-            setBoard(previousBoard); // Rollback
-            reject(new Error("Failed to update"));
-          } else {
-            setError(null);
-            resolve();
-          }
-        } catch (err) {
-          console.error("Error saving board:", err);
-          setError("Failed to save changes.");
-          setBoard(previousBoard); // Rollback
-          reject(err);
-        }
-      }, 300); // 300ms debounce
-    });
-  }, []);
-
-  const handleDragEnd = useCallback((activeId: string, overId: string) => {
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        columns: moveCard(prev.columns, activeId, overId),
-      };
-      updateBoard(newBoard, prev).catch(() => {});
-      return newBoard;
-    });
-  }, [updateBoard]);
-
-  const handleRenameColumn = useCallback((columnId: string, title: string) => {
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        columns: prev.columns.map((column) =>
-          column.id === columnId ? { ...column, title } : column
-        ),
-      };
-      updateBoard(newBoard, prev).catch(() => {});
-      return newBoard;
-    });
-  }, [updateBoard]);
-
-  const handleAddCard = useCallback((columnId: string, title: string, details: string) => {
-    const id = createId("card");
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        cards: {
-          ...prev.cards,
-          [id]: { id, title, details: details || "No details yet." },
-        },
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? { ...column, cardIds: [...column.cardIds, id] }
-            : column
-        ),
-      };
-      updateBoard(newBoard, prev).catch(() => {});
-      return newBoard;
-    });
-  }, [updateBoard]);
-
-  const handleDeleteCard = useCallback((columnId: string, cardId: string) => {
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        cards: Object.fromEntries(
-          Object.entries(prev.cards).filter(([id]) => id !== cardId)
-        ),
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? {
-                ...column,
-                cardIds: column.cardIds.filter((id) => id !== cardId),
-              }
-            : column
-        ),
-      };
-      updateBoard(newBoard, prev).catch(() => {});
-      return newBoard;
-    });
-  }, [updateBoard]);
-
-  return {
-    board,
-    setBoard,
-    isLoading,
-    error,
-    handleDragEnd,
-    handleRenameColumn,
-    handleAddCard,
-    handleDeleteCard
-  };
-}
+...
 ```
 
-### Task 4: Refactor KanbanBoard Component
+- [x] **Step 2: Refactor KanbanBoard Component**
 
 **Files:**
 - Modify: `frontend/src/components/KanbanBoard.tsx`
 
-- [ ] **Step 1: Update imports and use the hook**
+- [x] **Step 1: Update imports and use the hook**
 
 Replace the internal state logic with the `useKanbanBoard` hook.
 
 ```typescript
 import { useMemo, useState } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { KanbanColumn } from "@/components/KanbanColumn";
-import { KanbanCardPreview } from "@/components/KanbanCardPreview";
-import { useAuth } from "@/lib/auth";
-import { AiChatSidebar } from "@/components/AiChatSidebar";
-import { useKanbanBoard } from "@/lib/useKanbanBoard";
-
-export const KanbanBoard = () => {
-  const { logout } = useAuth();
-  const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  
+...
   const {
     board,
     setBoard,
@@ -306,7 +145,7 @@ export const KanbanBoard = () => {
   } = useKanbanBoard();
 ```
 
-- [ ] **Step 2: Update the `handleDragEnd` wrapper**
+- [x] **Step 2: Update the `handleDragEnd` wrapper**
 
 The component still needs a thin wrapper around `handleDragEnd` to extract IDs from the event object.
 

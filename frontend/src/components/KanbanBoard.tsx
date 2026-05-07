@@ -26,6 +26,7 @@ export const KanbanBoard = () => {
     board,
     setBoard,
     isLoading,
+    isSaving,
     error,
     handleDragEnd: handleBoardDragEnd,
     handleRenameColumn,
@@ -42,7 +43,9 @@ export const KanbanBoard = () => {
   const cardsById = useMemo(() => board.cards, [board.cards]);
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveCardId(event.active.id as string);
+    if (typeof event.active.id === "string") {
+      setActiveCardId(event.active.id);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -53,7 +56,9 @@ export const KanbanBoard = () => {
       return;
     }
 
-    handleBoardDragEnd(active.id as string, over.id as string);
+    if (typeof active.id === "string" && typeof over.id === "string") {
+      handleBoardDragEnd(active.id, over.id);
+    }
   };
 
   const activeCard = activeCardId ? cardsById[activeCardId] : null;
@@ -79,6 +84,11 @@ export const KanbanBoard = () => {
               </p>
               <h1 className="mt-2 font-display text-3xl sm:text-4xl font-bold text-[var(--navy-dark)] drop-shadow-sm">
                 Kanban Studio
+                {isSaving && (
+                  <span className="ml-4 text-xs font-normal text-[var(--gray-text)] animate-pulse">
+                    Saving...
+                  </span>
+                )}
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--gray-text)]">
                 Keep momentum visible. Rename columns, drag cards between stages,

@@ -63,8 +63,16 @@ def ask(question: str) -> str:
 
 
 def strip_markdown_json(text: str) -> str:
-    """Strip markdown code block formatting if present."""
+    """Strip markdown code block formatting if present and try to extract JSON."""
     text = text.strip()
+    
+    # Try to find the first { and last }
+    start = text.find('{')
+    end = text.rfind('}')
+    
+    if start != -1 and end != -1 and end > start:
+        return text[start:end+1]
+        
     if text.startswith("```json"):
         text = text[7:]
     elif text.startswith("```"):
@@ -101,6 +109,7 @@ def chat_with_board(
             model=MODEL,
             messages=messages,
             response_format={"type": "json_object"},
+            timeout=30.0, # Add timeout
         )
     except Exception as e:
         # Distinguish between common error types if possible
@@ -111,6 +120,9 @@ def chat_with_board(
         elif "authentication" in error_msg.lower() or "api key" in error_msg.lower():
             print(f"DEBUG: AI Authentication error: {error_msg}")
             raise HTTPException(status_code=500, detail="AI service authentication failed.")
+        elif "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+            print(f"DEBUG: AI Timeout error: {error_msg}")
+            raise HTTPException(status_code=504, detail="AI service request timed out.")
         else:
             print(f"DEBUG: AI call failed: {error_msg}")
             raise HTTPException(status_code=502, detail=f"AI service error: {error_msg}")
@@ -140,7 +152,14 @@ def chat_with_board(
         # Handle cases where columns or cards might be empty/null but the dict exists
         parsed["board_update"] = None
         
-    return AIChatResponse(
-        message=parsed.get("message", "I processed your request."),
-        board_update=parsed.get("board_update")
-    )
+    try:
+        return AIChatResponse(
+            message=parsed.get("message", "I processed your request."),
+            board_update=parsed.get("board_update")
+        )
+    except Exception as e:
+        print(f"DEBUG: Validation error for AIChatResponse: {e}")
+        return AIChatResponse(
+            message="The AI suggested changes that don't fit the board structure. I've ignored the update, but here was the message: " + parsed.get("message", ""),
+            board_update=None
+        )
