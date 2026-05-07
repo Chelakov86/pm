@@ -2,17 +2,18 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path="../.env")
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import models, schemas
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 import ai
+
+from contextlib import asynccontextmanager
 
 # Create all database tables
 models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
 
 def create_initial_user(db: Session):
     user = db.query(models.User).filter(models.User.username == "user").first()
@@ -30,11 +31,23 @@ def create_initial_user(db: Session):
         db.add(board)
         db.commit()
 
-@app.on_event("startup")
-def on_startup():
-    db = next(get_db())
-    create_initial_user(db)
-    db.close()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: create initial user
+    with SessionLocal() as db:
+        create_initial_user(db)
+    yield
+    # Shutdown: any cleanup if needed
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency to get current dummy user
 def get_current_user(db: Session = Depends(get_db)):
@@ -89,6 +102,9 @@ def ai_chat(
             user_message=chat_request.message,
             history=chat_request.history,
         )
+    except HTTPException:
+        # Re-raise FastAPIs HTTPExceptions directly
+        raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
 

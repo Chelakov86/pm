@@ -1,11 +1,12 @@
 import os
 import json
+from fastapi import HTTPException
 from openai import OpenAI
 from typing import List, Dict, Any, Optional
 from schemas import AIChatResponse, ChatMessage
 
-# OpenRouter's auto model picker
-MODEL = "openrouter/auto"
+# OpenRouter's auto model picker (free models only)
+MODEL = "openrouter/free"
 
 SYSTEM_PROMPT_TEMPLATE = """You are a helpful AI assistant for a Kanban board application called "Kanban Studio".
 You can help users manage their project by answering questions and optionally updating the board.
@@ -58,7 +59,19 @@ def ask(question: str) -> str:
         model=MODEL,
         messages=[{"role": "user", "content": question}],
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
+
+
+def strip_markdown_json(text: str) -> str:
+    """Strip markdown code block formatting if present."""
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
 
 
 def chat_with_board(
@@ -73,7 +86,7 @@ def chat_with_board(
         board_json=json.dumps(board_state, indent=2)
     )
 
-    messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+    messages: List[Any] = [{"role": "system", "content": system_prompt}]
 
     # Append conversation history
     for msg in history:
@@ -90,12 +103,31 @@ def chat_with_board(
             response_format={"type": "json_object"},
         )
     except Exception as e:
-        print(f"DEBUG: AI call failed: {str(e)}")
-        raise e
+        # Distinguish between common error types if possible
+        error_msg = str(e)
+        if "rate limit" in error_msg.lower():
+            print(f"DEBUG: AI Rate limit hit: {error_msg}")
+            raise HTTPException(status_code=429, detail="AI service rate limit exceeded. Please try again later.")
+        elif "authentication" in error_msg.lower() or "api key" in error_msg.lower():
+            print(f"DEBUG: AI Authentication error: {error_msg}")
+            raise HTTPException(status_code=500, detail="AI service authentication failed.")
+        else:
+            print(f"DEBUG: AI call failed: {error_msg}")
+            raise HTTPException(status_code=502, detail=f"AI service error: {error_msg}")
 
-    raw_content = response.choices[0].message.content
+    raw_content = response.choices[0].message.content or ""
     print(f"DEBUG: raw_content: {raw_content}")
-    parsed = json.loads(raw_content)
+    
+    cleaned_content = strip_markdown_json(raw_content)
+    try:
+        parsed = json.loads(cleaned_content)
+    except json.JSONDecodeError as e:
+        print(f"DEBUG: Failed to parse JSON: {e} - Raw content: {cleaned_content}")
+        # Fallback to a safe error message if JSON parsing fails completely
+        parsed = {
+            "message": "I encountered an error parsing the response from the AI. Please try again.",
+            "board_update": None
+        }
     
     # AIChatResponse pydantic model expects board_update to be a BoardData object or None
     # If the LLM returned null or something else, handle it.

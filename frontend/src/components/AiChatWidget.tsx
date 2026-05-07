@@ -96,7 +96,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({ onBoardUpdate }) => 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
             <div className="text-center text-xs text-[var(--gray-text)] mt-10 px-4">
-              Send a message to let the AI help you manage your board! Try "Create a new column for Review".
+              Send a message to let the AI help you manage your board! Try &quot;Create a new column for Review&quot;.
             </div>
           )}
           {messages.map((msg, idx) => (

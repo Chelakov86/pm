@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -13,64 +13,25 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
-import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
 import { useAuth } from "@/lib/auth";
 import { AiChatWidget } from "@/components/AiChatWidget";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useKanbanBoard } from "@/lib/useKanbanBoard";
+
 export const KanbanBoard = () => {
   const { logout } = useAuth();
-  const [board, setBoard] = useState<BoardData>(initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchBoard = async () => {
-      try {
-        const response = await fetch("/api/board");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.state && Array.isArray(data.state.columns) && data.state.columns.length > 0) {
-            setBoard(data.state);
-          } else {
-            setBoard(initialData);
-            await fetch("/api/board", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state: initialData })
-            });
-          }
-        } else {
-          setBoard(initialData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch board:", err);
-        setError("Failed to load board data.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchBoard();
-  }, []);
-
-  const updateBoard = useCallback(async (newBoard: BoardData) => {
-    try {
-      const response = await fetch("/api/board", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: newBoard }),
-      });
-      if (!response.ok) {
-        console.error("Failed to update board");
-        setError("Failed to save changes.");
-      } else {
-        setError(null);
-      }
-    } catch (err) {
-      console.error("Error saving board:", err);
-      setError("Failed to save changes.");
-    }
-  }, []);
+  const {
+    board,
+    setBoard,
+    isLoading,
+    error,
+    handleDragEnd: handleBoardDragEnd,
+    handleRenameColumn,
+    handleAddCard,
+    handleDeleteCard
+  } = useKanbanBoard();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -92,68 +53,7 @@ export const KanbanBoard = () => {
       return;
     }
 
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        columns: moveCard(prev.columns, active.id as string, over.id as string),
-      };
-      updateBoard(newBoard);
-      return newBoard;
-    });
-  };
-
-  const handleRenameColumn = (columnId: string, title: string) => {
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        columns: prev.columns.map((column) =>
-          column.id === columnId ? { ...column, title } : column
-        ),
-      };
-      updateBoard(newBoard);
-      return newBoard;
-    });
-  };
-
-  const handleAddCard = (columnId: string, title: string, details: string) => {
-    const id = createId("card");
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        cards: {
-          ...prev.cards,
-          [id]: { id, title, details: details || "No details yet." },
-        },
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? { ...column, cardIds: [...column.cardIds, id] }
-            : column
-        ),
-      };
-      updateBoard(newBoard);
-      return newBoard;
-    });
-  };
-
-  const handleDeleteCard = (columnId: string, cardId: string) => {
-    setBoard((prev) => {
-      const newBoard = {
-        ...prev,
-        cards: Object.fromEntries(
-          Object.entries(prev.cards).filter(([id]) => id !== cardId)
-        ),
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? {
-                ...column,
-                cardIds: column.cardIds.filter((id) => id !== cardId),
-              }
-            : column
-        ),
-      };
-      updateBoard(newBoard);
-      return newBoard;
-    });
+    handleBoardDragEnd(active.id as string, over.id as string);
   };
 
   const activeCard = activeCardId ? cardsById[activeCardId] : null;

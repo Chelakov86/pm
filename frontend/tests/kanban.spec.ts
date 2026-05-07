@@ -1,6 +1,28 @@
 import { expect, test } from "@playwright/test";
 
-test.beforeEach(async ({ page }) => {
+const INITIAL_BOARD = {
+  columns: [
+    { id: "col-todo", title: "To Do", cardIds: ["card-1"] },
+    { id: "col-dev", title: "In Progress", cardIds: [] },
+    { id: "col-review", title: "Review", cardIds: [] },
+    { id: "col-done", title: "Done", cardIds: [] },
+    { id: "col-backlog", title: "Backlog", cardIds: [] },
+  ],
+  cards: {
+    "card-1": {
+      id: "card-1",
+      title: "Initial Task",
+      details: "Test detail",
+    },
+  },
+};
+
+test.beforeEach(async ({ page, request }) => {
+  // Reset board state via API
+  await request.put("http://localhost:8000/api/board", {
+    data: { state: INITIAL_BOARD },
+  });
+
   await page.goto("/");
   
   // Ensure we are logged in
@@ -18,11 +40,14 @@ test("loads the kanban board", async ({ page }) => {
 
 test("adds a card to a column", async ({ page }) => {
   const firstColumn = page.locator('[data-testid^="column-"]').first();
+  const cardTitle = `Playwright card ${Date.now()}`;
+  
   await firstColumn.getByRole("button", { name: /add a card/i }).click();
-  await firstColumn.getByPlaceholder("Card title").fill("Playwright card");
+  await firstColumn.getByPlaceholder("Card title").fill(cardTitle);
   await firstColumn.getByPlaceholder("Details").fill("Added via e2e.");
   await firstColumn.getByRole("button", { name: /add card/i }).click();
-  await expect(firstColumn.getByText("Playwright card")).toBeVisible();
+  
+  await expect(firstColumn.getByText(cardTitle)).toBeVisible();
 });
 
 test("moves a card between columns", async ({ page }) => {
@@ -51,14 +76,37 @@ test("moves a card between columns", async ({ page }) => {
 test("persists board state after reload", async ({ page }) => {
   // Add a card
   const firstColumn = page.locator('[data-testid^="column-"]').first();
+  const cardTitle = `Persistent card ${Date.now()}`;
+  
   await firstColumn.getByRole("button", { name: /add a card/i }).click();
-  await firstColumn.getByPlaceholder("Card title").fill("Persistent card");
+  await firstColumn.getByPlaceholder("Card title").fill(cardTitle);
+  
+  // Start waiting for the PUT request BEFORE clicking add
+  const putRequestPromise = page.waitForRequest(
+    req => req.url().includes("/api/board") && req.method() === "PUT"
+  );
+  const putResponsePromise = page.waitForResponse(
+    resp => resp.url().includes("/api/board") && resp.status() === 200
+  );
+
   await firstColumn.getByRole("button", { name: /add card/i }).click();
-  await expect(firstColumn.getByText("Persistent card")).toBeVisible();
+  await expect(firstColumn.getByText(cardTitle)).toBeVisible();
+
+  console.log(`Debug: Created card with title "${cardTitle}", waiting for persistence...`);
+
+  // Wait for the debounced PUT request to finish
+  await putRequestPromise;
+  await putResponsePromise;
 
   // Reload the page
-  await page.reload();
+  const [response] = await Promise.all([
+    page.waitForResponse(resp => resp.url().includes("/api/board") && resp.status() === 200),
+    page.reload()
+  ]);
+
+  const boardData = await response.json();
+  console.log(`Debug: Board state after reload: ${JSON.stringify(boardData.state)}`);
 
   // Verify the card is still there
-  await expect(firstColumn.getByText("Persistent card")).toBeVisible();
+  await expect(page.getByText(cardTitle)).toBeVisible();
 });
