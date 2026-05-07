@@ -1,15 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --accent-yellow: #ecad0a;
+  /* Light Theme Variables */
+  --accent-yellow: #f5b000;
   --primary-blue: #209dd7;
   --secondary-purple: #753991;
   --navy-dark: #032147;
-  --gray-text: #888888;
-  --surface: #f7f8fb;
-  --surface-strong: #ffffff;
+  --gray-text: #64748b;
+  --surface: #f8fafc;
+  --surface-strong: rgba(255, 255, 255, 0.7);
   --stroke: rgba(3, 33, 71, 0.08);
-  --shadow: 0 18px 40px rgba(3, 33, 71, 0.12);
+  --shadow: 0 18px 40px rgba(3, 33, 71, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --gradient-bg: radial-gradient(circle at 0% 0%, rgba(32,157,215,0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(117,57,145,0.12) 0%, transparent 50%);
+  --input-bg: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme='dark'] {
+  /* Dark Theme Variables */
+  --accent-yellow: #facc15;
+  --primary-blue: #38bdf8;
+  --secondary-purple: #c084fc;
+  --navy-dark: #f8fafc;
+  --gray-text: #94a3b8;
+  --surface: #0f172a;
+  --surface-strong: rgba(30, 41, 59, 0.6);
+  --stroke: rgba(255, 255, 255, 0.1);
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --gradient-bg: radial-gradient(circle at 0% 0%, rgba(56,189,248,0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(192,132,252,0.15) 0%, transparent 50%);
+  --input-bg: rgba(15, 23, 42, 0.6);
 }
 
 @theme inline {
@@ -18,16 +38,32 @@
   --font-sans: var(--font-body);
 }
 
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--surface-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+}
+
+/* Base Body Styling */
+body {
+  background-color: var(--surface);
+  background-image: var(--gradient-bg);
+  background-attachment: fixed;
+  color: var(--navy-dark);
+  font-family: var(--font-body), "Segoe UI", sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 * {
   box-sizing: border-box;
 }
 
-body {
-  background: var(--surface);
-  color: var(--navy-dark);
-  font-family: var(--font-body), "Segoe UI", sans-serif;
-  margin: 0;
-}
+
 
 .font-display {
   font-family: var(--font-display), "Segoe UI", sans-serif;

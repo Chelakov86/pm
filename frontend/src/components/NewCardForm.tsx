@@ -31,7 +31,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
               setFormState((prev) => ({ ...prev, title: event.target.value }))
             }
             placeholder="Card title"
-            className="w-full rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm font-medium text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
+            className="w-full rounded-xl border border-[var(--stroke)] bg-[var(--input-bg)] px-3 py-2 text-sm font-medium text-[var(--navy-dark)] outline-none transition-all focus:border-[var(--primary-blue)] focus:ring-2 focus:ring-[rgba(32,157,215,0.2)]"
             required
           />
           <textarea
@@ -41,7 +41,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
             }
             placeholder="Details"
             rows={3}
-            className="w-full resize-none rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm text-[var(--gray-text)] outline-none transition focus:border-[var(--primary-blue)]"
+            className="w-full resize-none rounded-xl border border-[var(--stroke)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--navy-dark)] placeholder-[var(--gray-text)] outline-none transition-all focus:border-[var(--primary-blue)] focus:ring-2 focus:ring-[rgba(32,157,215,0.2)]"
           />
           <div className="flex flex-col gap-2">
             <button
@@ -67,7 +67,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="w-full rounded-full border border-dashed border-[var(--stroke)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--primary-blue)] transition hover:border-[var(--primary-blue)]"
+          className="w-full rounded-full border border-dashed border-[var(--stroke)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--primary-blue)] transition-all hover:border-[var(--primary-blue)] hover:bg-[rgba(32,157,215,0.05)]"
         >
           Add a card
         </button>

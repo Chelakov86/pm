@@ -27,8 +27,8 @@ export const KanbanColumn = ({
     <section
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[520px] flex-col rounded-3xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow)] transition",
-        isOver && "ring-2 ring-[var(--accent-yellow)]"
+        "flex min-h-[520px] flex-col rounded-[24px] glass-panel p-4 transition-all duration-300",
+        isOver && "ring-2 ring-[var(--accent-yellow)] shadow-[0_0_30px_rgba(250,204,21,0.2)] bg-[var(--surface-strong)] scale-[1.01]"
       )}
       data-testid={`column-${column.id}`}
     >
@@ -44,7 +44,7 @@ export const KanbanColumn = ({
             {cards.length}
           </span>
         </div>
-        <button className="p-1.5 rounded-lg text-[var(--gray-text)] hover:bg-[var(--surface)] transition-colors">
+        <button className="p-1.5 rounded-lg text-[var(--gray-text)] hover:bg-[var(--glass-border)] transition-colors">
           <MoreVertical size={16} />
         </button>
       </div>
@@ -59,7 +59,10 @@ export const KanbanColumn = ({
           ))}
         </SortableContext>
         {cards.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--stroke)] px-3 py-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
+          <div className={clsx(
+            "flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--stroke)] px-3 py-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)] transition-all duration-300",
+            isOver && "border-[var(--accent-yellow)] text-[var(--accent-yellow)] bg-[rgba(250,204,21,0.05)]"
+          )}>
             Drop a card here
           </div>
         )}

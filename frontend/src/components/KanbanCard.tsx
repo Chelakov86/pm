@@ -23,9 +23,9 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
       ref={setNodeRef}
       style={style}
       className={clsx(
-        "group relative rounded-2xl border border-[var(--stroke)] bg-white px-4 py-4 shadow-[0_4px_12px_rgba(3,33,71,0.04)]",
-        "transition-all duration-200 hover:shadow-[0_12px_24px_rgba(3,33,71,0.08)]",
-        isDragging && "z-50 opacity-60 shadow-[0_18px_32px_rgba(3,33,71,0.16)]"
+        "group relative rounded-2xl glass-panel p-4",
+        "transition-all duration-300 hover:shadow-[0_12px_28px_rgba(0,0,0,0.12)] hover:-translate-y-1 hover:border-[var(--glass-border)] cursor-grab active:cursor-grabbing",
+        isDragging && "z-50 opacity-70 shadow-[0_20px_40px_rgba(0,0,0,0.2)] scale-105"
       )}
       {...attributes}
       {...listeners}
@@ -46,7 +46,7 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
             e.stopPropagation();
             onDelete(card.id);
           }}
-          className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-[var(--gray-text)] hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+          className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-[var(--gray-text)] hover:text-red-500 hover:bg-[rgba(239,68,68,0.1)] transition-all duration-200"
           aria-label={`Delete ${card.title}`}
         >
           <Trash2 size={16} />

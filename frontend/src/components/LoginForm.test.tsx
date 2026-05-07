@@ -2,12 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginForm } from "@/components/LoginForm";
 import { AuthProvider } from "@/lib/auth";
-
+import { ThemeProvider } from "@/lib/theme";
 const renderLogin = () =>
   render(
-    <AuthProvider>
-      <LoginForm />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <LoginForm />
+      </AuthProvider>
+    </ThemeProvider>
   );
 
 describe("LoginForm", () => {

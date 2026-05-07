@@ -15,8 +15,8 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
 import { useAuth } from "@/lib/auth";
-import { AiChatSidebar } from "@/components/AiChatSidebar";
-
+import { AiChatWidget } from "@/components/AiChatWidget";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 export const KanbanBoard = () => {
   const { logout } = useAuth();
   const [board, setBoard] = useState<BoardData>(initialData);
@@ -167,35 +167,26 @@ export const KanbanBoard = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
-      <div className="relative flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="pointer-events-none absolute left-0 top-0 h-[420px] w-[420px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,_rgba(32,157,215,0.25)_0%,_rgba(32,157,215,0.05)_55%,_transparent_70%)]" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-[520px] w-[520px] translate-x-1/4 translate-y-1/4 rounded-full bg-[radial-gradient(circle,_rgba(117,57,145,0.18)_0%,_rgba(117,57,145,0.05)_55%,_transparent_75%)]" />
+    <div className="flex h-screen overflow-hidden">
+      <div className="relative flex-1 overflow-y-auto overflow-x-hidden kanban-container">
+        <main className="relative mx-auto flex min-h-max max-w-[1500px] flex-col gap-8 px-6 pb-24 pt-8">
 
-        <main className="relative mx-auto flex min-h-max max-w-[1500px] flex-col gap-10 px-6 pb-16 pt-12">
-        <header className="flex flex-col gap-6 rounded-[32px] border border-[var(--stroke)] bg-white/80 p-8 shadow-[var(--shadow)] backdrop-blur">
+        <header className="flex flex-col gap-6 rounded-[28px] glass-panel p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
                 Single Board Kanban
               </p>
-              <h1 className="mt-3 font-display text-4xl font-semibold text-[var(--navy-dark)]">
+              <h1 className="mt-2 font-display text-3xl sm:text-4xl font-bold text-[var(--navy-dark)] drop-shadow-sm">
                 Kanban Studio
               </h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--gray-text)]">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--gray-text)]">
                 Keep momentum visible. Rename columns, drag cards between stages,
                 and capture quick notes without getting buried in settings.
               </p>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]">
-                  Focus
-                </p>
-                <p className="mt-2 text-lg font-semibold text-[var(--primary-blue)]">
-                  One board. Five columns. Zero clutter.
-                </p>
-              </div>
+            <div className="flex items-center gap-3">
+              <ThemeSwitcher />
               <button
                 type="button"
                 onClick={logout}
@@ -230,9 +221,10 @@ export const KanbanBoard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <section className="flex flex-row gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-            {board.columns.map((column) => (
-              <div key={column.id} className="flex-1 min-w-[280px] max-w-[400px]">
+          <div className="overflow-x-auto pb-4 kanban-container -mx-6 px-6">
+            <section className="flex flex-row gap-6 h-[calc(100vh-250px)] min-h-[500px] w-max">
+              {board.columns.map((column) => (
+                <div key={column.id} className="flex-1 w-[320px] max-w-[360px]">
                 <KanbanColumn
                   column={column}
                   cards={column.cardIds.map((cardId) => board.cards[cardId])}
@@ -241,8 +233,9 @@ export const KanbanBoard = () => {
                   onDeleteCard={handleDeleteCard}
                 />
               </div>
-            ))}
-          </section>
+              ))}
+            </section>
+          </div>
           <DragOverlay>
             {activeCard ? (
               <div className="w-[260px]">
@@ -253,7 +246,7 @@ export const KanbanBoard = () => {
         </DndContext>
       </main>
       </div>
-      <AiChatSidebar onBoardUpdate={setBoard} />
+      <AiChatWidget onBoardUpdate={setBoard} />
     </div>
   );
 };
