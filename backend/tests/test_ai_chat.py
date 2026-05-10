@@ -8,7 +8,7 @@ Covers:
 - Board persistence after AI update
 """
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
@@ -100,7 +100,8 @@ class TestChatWithoutBoardUpdate:
 
     def test_simple_question(self):
         ai_resp = _mock_ai_response("The board has 1 card in Backlog.")
-        with patch("ai.chat_with_board", return_value=ai_resp) as mock_chat:
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             response = client.post(
                 "/api/ai/chat",
                 json={"message": "How many cards are in Backlog?"},
@@ -118,7 +119,8 @@ class TestChatWithoutBoardUpdate:
 
     def test_conversation_history_forwarded(self):
         ai_resp = _mock_ai_response("Sure, the Done column is empty.")
-        with patch("ai.chat_with_board", return_value=ai_resp) as mock_chat:
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             history = [
                 {"role": "user", "content": "Hi there"},
                 {"role": "assistant", "content": "Hello! How can I help?"},
@@ -154,7 +156,8 @@ class TestChatWithBoardUpdate:
             "Done! I've added 'Write Docs' to the Backlog.",
             board_update=updated_board,
         )
-        with patch("ai.chat_with_board", return_value=ai_resp):
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             response = client.post(
                 "/api/ai/chat",
                 json={"message": "Add a card for 'Write Docs' to the Backlog"},
@@ -188,7 +191,8 @@ class TestChatWithBoardUpdate:
             "Moved 'Existing Task' to Done!",
             board_update=updated_board,
         )
-        with patch("ai.chat_with_board", return_value=ai_resp):
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             response = client.post(
                 "/api/ai/chat",
                 json={"message": "Move the existing task to Done"},
@@ -215,7 +219,8 @@ class TestChatWithBoardUpdate:
             "Deleted 'Existing Task' from the board.",
             board_update=updated_board,
         )
-        with patch("ai.chat_with_board", return_value=ai_resp):
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             response = client.post(
                 "/api/ai/chat",
                 json={"message": "Delete the existing task"},
@@ -243,7 +248,8 @@ class TestChatErrorHandling:
     def test_empty_message(self):
         """An empty message should still work (the AI handles it)."""
         ai_resp = _mock_ai_response("I'm here to help! What would you like to do?")
-        with patch("ai.chat_with_board", return_value=ai_resp):
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             response = client.post(
                 "/api/ai/chat",
                 json={"message": ""},
@@ -272,7 +278,8 @@ class TestBoardStatePassedToAI:
         client.put("/api/board", json={"state": new_state})
 
         ai_resp = _mock_ai_response("You have 1 card in To Do.")
-        with patch("ai.chat_with_board", return_value=ai_resp) as mock_chat:
+        with patch("ai.chat_with_board", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = ai_resp
             client.post(
                 "/api/ai/chat",
                 json={"message": "What's on my board?"},

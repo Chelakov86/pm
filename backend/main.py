@@ -39,11 +39,14 @@ def create_initial_user(db: Session):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create initial user
+    # Startup: create initial user and AI client
     with SessionLocal() as db:
         create_initial_user(db)
+    
+    app.state.ai_client = ai.get_ai_client()
     yield
-    # Shutdown: any cleanup if needed
+    # Shutdown: cleanup
+    await app.state.ai_client.close()
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -73,8 +76,8 @@ def read_hello():
     return {"message": "Hello World"}
 
 @app.get("/api/ai/test")
-def ai_test():
-    answer = ai.ask("What is 2+2? Reply with just the number.")
+async def ai_test(request: Request):
+    answer = await ai.ask(request.app.state.ai_client, "What is 2+2? Reply with just the number.")
     return {"response": answer}
 
 @app.get("/api/board", response_model=schemas.BoardResponse)
@@ -98,7 +101,7 @@ def update_board(board_update: schemas.BoardStateUpdate, user: models.User = Dep
 
 @app.post("/api/ai/chat", response_model=schemas.ChatApiResponse)
 @limiter.limit("5/minute")
-def ai_chat(
+async def ai_chat(
     request: Request,
     chat_request: schemas.ChatRequest,
     user: models.User = Depends(get_current_user),
@@ -111,7 +114,8 @@ def ai_chat(
 
     # 2. Call the AI with the board state, user message, and conversation history
     try:
-        ai_response = ai.chat_with_board(
+        ai_response = await ai.chat_with_board(
+            client=request.app.state.ai_client,
             board_state=board_state,  # type: ignore
             user_message=chat_request.message,
             history=chat_request.history,

@@ -30,51 +30,48 @@ export function useChat(options?: UseChatOptions): UseChatReturn {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!input.trim() || isLoading) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-      const userMessage = input.trim();
-      setInput("");
+    const userMessage = input.trim();
+    setInput("");
 
-      const newHistory = [...messages];
-      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
-      setIsLoading(true);
+    const newHistory = [...messages];
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setIsLoading(true);
 
-      try {
-        const response = await fetch("/api/ai/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: userMessage,
-            history: newHistory,
-          }),
-        });
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          history: newHistory,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to communicate with AI");
-        }
-
-        const data = await response.json();
-
-        setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
-
-        if (data.board_update && onBoardUpdate) {
-          onBoardUpdate(data.board_update);
-        }
-      } catch (error) {
-        console.error("AI chat error:", error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
-        ]);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to communicate with AI");
       }
-    },
-    [input, isLoading, messages, onBoardUpdate]
-  );
+
+      const data = await response.json();
+
+      setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
+
+      if (data.board_update && onBoardUpdate) {
+        onBoardUpdate(data.board_update);
+      }
+    } catch (error) {
+      console.error("AI chat error:", error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     messages,

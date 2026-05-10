@@ -1,23 +1,27 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, JSON, ForeignKey, DateTime
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 import datetime
 from database import Base
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
-    board = relationship("Board", back_populates="owner", uselist=False)
+    board: Mapped["Board"] = relationship("Board", back_populates="owner", uselist=False)
 
 class Board(Base):
     __tablename__ = "boards"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
-    state = Column(JSON)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    state: Mapped[dict] = mapped_column(JSON)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=datetime.datetime.utcnow, 
+        onupdate=datetime.datetime.utcnow
+    )
 
-    owner = relationship("User", back_populates="board")
+    owner: Mapped["User"] = relationship("User", back_populates="board")

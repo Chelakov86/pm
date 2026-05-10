@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
 
 from main import app
@@ -18,7 +18,7 @@ def test_ai_test_endpoint():
 
     with patch("ai.get_ai_client") as mock_client_fn:
         mock_client = MagicMock()
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         mock_client_fn.return_value = mock_client
 
         response = client.get("/api/ai/test")

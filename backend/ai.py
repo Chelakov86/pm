@@ -2,15 +2,20 @@ import os
 import json
 import logging
 from fastapi import HTTPException
-from openai import OpenAI
-from typing import List, Dict, Any, Optional
-from schemas import AIChatResponse, ChatMessage
+from openai import AsyncOpenAI
+from typing import List, Dict, Any, Optional, NamedTuple
+from schemas import AIChatResponse, ChatMessage, BoardData
 
 # Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # OpenRouter model (free OSS model)
-MODEL = "openai/gpt-oss-120b:free"
+MODEL = "openrouter/free"
+
+class AIError(NamedTuple):
+    status_code: int
+    detail: str
 
 SYSTEM_PROMPT_TEMPLATE = """You are a helpful AI assistant for a Kanban board application called "Kanban Studio".
 You can help users manage their project by answering questions and optionally updating the board.
@@ -49,19 +54,18 @@ Important rules for board updates:
 - Preserve all existing cards and columns that the user didn't ask to change."""
 
 
-def get_ai_client() -> OpenAI:
+def get_ai_client() -> AsyncOpenAI:
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is not configured")
-    return OpenAI(
+    return AsyncOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
 
 
-def ask(question: str) -> str:
-    client = get_ai_client()
-    response = client.chat.completions.create(
+async def ask(client: AsyncOpenAI, question: str) -> str:
+    response = await client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": question}],
         timeout=30.0,
@@ -90,26 +94,25 @@ def strip_markdown_json(text: str) -> str:
     return text.strip()
 
 
-def _classify_ai_error(error: Exception) -> tuple[int, str]:
-    """Classify AI service errors and return (status_code, detail)."""
+def _classify_ai_error(error: Exception) -> AIError:
+    """Classify AI service errors and return AIError(status_code, detail)."""
     error_msg = str(error).lower()
     if "rate limit" in error_msg:
-        return 429, "AI service rate limit exceeded. Please try again later."
+        return AIError(429, "AI service rate limit exceeded. Please try again later.")
     if "authentication" in error_msg or "api key" in error_msg:
-        return 500, "AI service authentication failed."
+        return AIError(500, "AI service authentication failed.")
     if "timeout" in error_msg or "timed out" in error_msg:
-        return 504, "AI service request timed out."
-    return 502, f"AI service error: {error}"
+        return AIError(504, "AI service request timed out.")
+    return AIError(502, f"AI service error: {error}")
 
 
-def chat_with_board(
+async def chat_with_board(
+    client: AsyncOpenAI,
     board_state: Dict[str, Any],
     user_message: str,
     history: List[ChatMessage],
 ) -> AIChatResponse:
     """Send the board state + conversation to the LLM and get a structured response."""
-    client = get_ai_client()
-
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
         board_json=json.dumps(board_state, indent=2)
     )
@@ -125,21 +128,23 @@ def chat_with_board(
 
     # Call AI service with JSON mode for structured output
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=MODEL,
             messages=messages,
             response_format={"type": "json_object"},
             timeout=30.0,
         )
     except Exception as e:
-        status_code, detail = _classify_ai_error(e)
+        err = _classify_ai_error(e)
         logger.error(f"AI service error: {e}")
-        raise HTTPException(status_code=status_code, detail=detail)
+        raise HTTPException(status_code=err.status_code, detail=err.detail)
 
     raw_content = response.choices[0].message.content or ""
+    logger.info(f"AI raw response length: {len(raw_content)}")
     logger.debug(f"AI raw response: {raw_content}")
 
     cleaned_content = strip_markdown_json(raw_content)
+    logger.info(f"AI cleaned content length: {len(cleaned_content)}")
     try:
         parsed = json.loads(cleaned_content)
     except json.JSONDecodeError as e:

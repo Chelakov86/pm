@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { initialData, moveCard, createId, type BoardData } from "@/lib/kanban";
 
 export function useKanbanBoard() {
@@ -7,8 +7,7 @@ export function useKanbanBoard() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const boardRef = useRef(board);
-  boardRef.current = board;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const fetchBoard = async () => {
@@ -37,14 +36,24 @@ export function useKanbanBoard() {
       }
     };
     fetchBoard();
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
   }, []);
 
-  const saveBoard = useCallback((newBoard: BoardData, previousBoard: BoardData) => {
+  const saveBoard = (newBoard: BoardData, previousBoard: BoardData) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
     setIsSaving(true);
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
 
     timeoutRef.current = setTimeout(async () => {
       try {
@@ -52,86 +61,82 @@ export function useKanbanBoard() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ state: newBoard }),
+          signal,
         });
         if (!response.ok) {
           throw new Error("Failed to update");
         }
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
         console.error("Error saving board:", err);
         setError("Failed to save changes.");
         setBoard(previousBoard);
       } finally {
-        setIsSaving(false);
+        if (!signal.aborted) {
+          setIsSaving(false);
+        }
       }
-    }, 300);
-  }, []);
+    }, 500); // Slightly longer debounce for better stability
+  };
 
-  const handleDragEnd = useCallback((activeId: string, overId: string) => {
-    const previousBoard = boardRef.current;
-    setBoard((prevBoard) => {
-      const newBoard = {
-        ...prevBoard,
-        columns: moveCard(prevBoard.columns, activeId, overId),
-      };
-      saveBoard(newBoard, previousBoard);
-      return newBoard;
-    });
-  }, [saveBoard]);
+  const handleDragEnd = (activeId: string, overId: string) => {
+    const previousBoard = board;
+    const newBoard = {
+      ...board,
+      columns: moveCard(board.columns, activeId, overId),
+    };
+    setBoard(newBoard);
+    saveBoard(newBoard, previousBoard);
+  };
 
-  const handleRenameColumn = useCallback((columnId: string, title: string) => {
-    const previousBoard = boardRef.current;
-    setBoard((prevBoard) => {
-      const newBoard = {
-        ...prevBoard,
-        columns: prevBoard.columns.map((column) =>
-          column.id === columnId ? { ...column, title } : column
-        ),
-      };
-      saveBoard(newBoard, previousBoard);
-      return newBoard;
-    });
-  }, [saveBoard]);
+  const handleRenameColumn = (columnId: string, title: string) => {
+    const previousBoard = board;
+    const newBoard = {
+      ...board,
+      columns: board.columns.map((column) =>
+        column.id === columnId ? { ...column, title } : column
+      ),
+    };
+    setBoard(newBoard);
+    saveBoard(newBoard, previousBoard);
+  };
 
-  const handleAddCard = useCallback((columnId: string, title: string, details: string) => {
+  const handleAddCard = (columnId: string, title: string, details: string) => {
     const id = createId("card");
-    const previousBoard = boardRef.current;
-    setBoard((prevBoard) => {
-      const newBoard = {
-        ...prevBoard,
-        cards: {
-          ...prevBoard.cards,
-          [id]: { id, title, details: details || "No details yet." },
-        },
-        columns: prevBoard.columns.map((column) =>
-          column.id === columnId
-            ? { ...column, cardIds: [...column.cardIds, id] }
-            : column
-        ),
-      };
-      saveBoard(newBoard, previousBoard);
-      return newBoard;
-    });
-  }, [saveBoard]);
+    const previousBoard = board;
+    const newBoard = {
+      ...board,
+      cards: {
+        ...board.cards,
+        [id]: { id, title, details: details || "No details yet." },
+      },
+      columns: board.columns.map((column) =>
+        column.id === columnId
+          ? { ...column, cardIds: [...column.cardIds, id] }
+          : column
+      ),
+    };
+    setBoard(newBoard);
+    saveBoard(newBoard, previousBoard);
+  };
 
-  const handleDeleteCard = useCallback((columnId: string, cardId: string) => {
-    const previousBoard = boardRef.current;
-    setBoard((prevBoard) => {
-      const newBoard = {
-        ...prevBoard,
-        cards: Object.fromEntries(
-          Object.entries(prevBoard.cards).filter(([id]) => id !== cardId)
-        ),
-        columns: prevBoard.columns.map((column) =>
-          column.id === columnId
-            ? { ...column, cardIds: column.cardIds.filter((id) => id !== cardId) }
-            : column
-        ),
-      };
-      saveBoard(newBoard, previousBoard);
-      return newBoard;
-    });
-  }, [saveBoard]);
+  const handleDeleteCard = (columnId: string, cardId: string) => {
+    const previousBoard = board;
+    const newBoard = {
+      ...board,
+      cards: Object.fromEntries(
+        Object.entries(board.cards).filter(([id]) => id !== cardId)
+      ),
+      columns: board.columns.map((column) =>
+        column.id === columnId
+          ? { ...column, cardIds: column.cardIds.filter((id) => id !== cardId) }
+          : column
+      ),
+    };
+    setBoard(newBoard);
+    saveBoard(newBoard, previousBoard);
+  };
 
   return {
     board,
