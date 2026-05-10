@@ -1,5 +1,9 @@
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="../.env")
+
+# Load .env from project root (two levels up from backend/)
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,12 +29,11 @@ def create_initial_user(db: Session):
         db.add(user)
         db.commit()
         db.refresh(user)
-    
+
     # Initialize an empty board if the user doesn't have one
     board = db.query(models.Board).filter(models.Board.user_id == user.id).first()
     if not board:
-        initial_state = {"tasks": {}, "columns": {}, "columnOrder": []}
-        board = models.Board(user_id=user.id, state=initial_state)
+        board = models.Board(user_id=user.id, state={"columns": [], "cards": {}})
         db.add(board)
         db.commit()
 
@@ -88,7 +91,7 @@ def update_board(board_update: schemas.BoardStateUpdate, user: models.User = Dep
         board = models.Board(user_id=user.id, state=board_update.state)
         db.add(board)
     else:
-        board.state = board_update.state
+        board.state = board_update.state  # type: ignore
     db.commit()
     db.refresh(board)
     return board
@@ -109,7 +112,7 @@ def ai_chat(
     # 2. Call the AI with the board state, user message, and conversation history
     try:
         ai_response = ai.chat_with_board(
-            board_state=board_state,
+            board_state=board_state,  # type: ignore
             user_message=chat_request.message,
             history=chat_request.history,
         )
@@ -125,7 +128,7 @@ def ai_chat(
     if ai_response.board_update is not None:
         new_state = ai_response.board_update.model_dump()
         if board:
-            board.state = new_state
+            board.state = new_state  # type: ignore
         else:
             board = models.Board(user_id=user.id, state=new_state)
             db.add(board)
@@ -135,13 +138,17 @@ def ai_chat(
 
     return result
 
-frontend_build_dir = "/frontend-build"
-local_build_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "out")
+# Static file serving - check for frontend build in order of preference
+backend_dir = Path(__file__).resolve().parent
+build_paths = [
+    Path("/frontend-build"),
+    backend_dir.parent / "frontend" / "out",
+]
 
-if os.path.exists(frontend_build_dir):
-    app.mount("/", StaticFiles(directory=frontend_build_dir, html=True), name="static")
-elif os.path.exists(local_build_dir):
-    app.mount("/", StaticFiles(directory=local_build_dir, html=True), name="static")
+static_dir = next((p for p in build_paths if p.exists()), None)
+
+if static_dir:
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
 else:
     @app.get("/")
     def read_root():

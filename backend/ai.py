@@ -1,9 +1,13 @@
 import os
 import json
+import logging
 from fastapi import HTTPException
 from openai import OpenAI
 from typing import List, Dict, Any, Optional
 from schemas import AIChatResponse, ChatMessage
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # OpenRouter model (free OSS model)
 MODEL = "openai/gpt-oss-120b:free"
@@ -46,7 +50,9 @@ Important rules for board updates:
 
 
 def get_ai_client() -> OpenAI:
-    api_key = os.environ.get("OPENROUTER_API_KEY", "EMPTY")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is not configured")
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
@@ -58,28 +64,42 @@ def ask(question: str) -> str:
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": question}],
+        timeout=30.0,
     )
     return response.choices[0].message.content or ""
 
 
 def strip_markdown_json(text: str) -> str:
-    """Strip markdown code block formatting if present and try to extract JSON."""
+    """Strip markdown code block formatting and extract JSON."""
     text = text.strip()
-    
-    # Try to find the first { and last }
+
+    # Try to find JSON object boundaries
     start = text.find('{')
     end = text.rfind('}')
-    
+
     if start != -1 and end != -1 and end > start:
-        return text[start:end+1]
-        
-    if text.startswith("```json"):
-        text = text[7:]
-    elif text.startswith("```"):
-        text = text[3:]
+        return text[start:end + 1]
+
+    # Fall back to stripping markdown code blocks
+    for prefix in ["```json", "```"]:
+        if text.startswith(prefix):
+            text = text[len(prefix):]
+            break
     if text.endswith("```"):
         text = text[:-3]
     return text.strip()
+
+
+def _classify_ai_error(error: Exception) -> tuple[int, str]:
+    """Classify AI service errors and return (status_code, detail)."""
+    error_msg = str(error).lower()
+    if "rate limit" in error_msg:
+        return 429, "AI service rate limit exceeded. Please try again later."
+    if "authentication" in error_msg or "api key" in error_msg:
+        return 500, "AI service authentication failed."
+    if "timeout" in error_msg or "timed out" in error_msg:
+        return 504, "AI service request timed out."
+    return 502, f"AI service error: {error}"
 
 
 def chat_with_board(
@@ -103,63 +123,46 @@ def chat_with_board(
     # Append the new user message
     messages.append({"role": "user", "content": user_message})
 
-    # Use standard JSON object mode for maximum compatibility across providers
+    # Call AI service with JSON mode for structured output
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=messages,
             response_format={"type": "json_object"},
-            timeout=30.0, # Add timeout
+            timeout=30.0,
         )
     except Exception as e:
-        # Distinguish between common error types if possible
-        error_msg = str(e)
-        if "rate limit" in error_msg.lower():
-            print(f"DEBUG: AI Rate limit hit: {error_msg}")
-            raise HTTPException(status_code=429, detail="AI service rate limit exceeded. Please try again later.")
-        elif "authentication" in error_msg.lower() or "api key" in error_msg.lower():
-            print(f"DEBUG: AI Authentication error: {error_msg}")
-            raise HTTPException(status_code=500, detail="AI service authentication failed.")
-        elif "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
-            print(f"DEBUG: AI Timeout error: {error_msg}")
-            raise HTTPException(status_code=504, detail="AI service request timed out.")
-        else:
-            print(f"DEBUG: AI call failed: {error_msg}")
-            raise HTTPException(status_code=502, detail=f"AI service error: {error_msg}")
+        status_code, detail = _classify_ai_error(e)
+        logger.error(f"AI service error: {e}")
+        raise HTTPException(status_code=status_code, detail=detail)
 
     raw_content = response.choices[0].message.content or ""
-    print(f"DEBUG: raw_content: {raw_content}")
-    
+    logger.debug(f"AI raw response: {raw_content}")
+
     cleaned_content = strip_markdown_json(raw_content)
     try:
         parsed = json.loads(cleaned_content)
     except json.JSONDecodeError as e:
-        print(f"DEBUG: Failed to parse JSON: {e} - Raw content: {cleaned_content}")
-        # Fallback to a safe error message if JSON parsing fails completely
-        parsed = {
-            "message": "I encountered an error parsing the response from the AI. Please try again.",
-            "board_update": None
-        }
-    
-    # AIChatResponse pydantic model expects board_update to be a BoardData object or None
-    # If the LLM returned null or something else, handle it.
+        logger.error(f"Failed to parse AI JSON response: {e} - Content: {cleaned_content}")
+        return AIChatResponse(
+            message="I encountered an error parsing the response from the AI. Please try again.",
+            board_update=None,
+        )
+
+    # Validate board_update structure
     board_update = parsed.get("board_update")
-    
-    # If board_update is not a dict with required fields, treat as None
     if not isinstance(board_update, dict) or "columns" not in board_update or "cards" not in board_update:
         parsed["board_update"] = None
-    elif not board_update.get("columns") or not board_update.get("cards"):
-        # Handle cases where columns or cards might be empty/null but the dict exists
-        parsed["board_update"] = None
-        
+
     try:
         return AIChatResponse(
             message=str(parsed.get("message") or "I processed your request."),
-            board_update=parsed.get("board_update")
+            board_update=parsed.get("board_update"),
         )
     except Exception as e:
-        print(f"DEBUG: Validation error for AIChatResponse: {e}")
+        logger.error(f"AIChatResponse validation error: {e}")
         return AIChatResponse(
-            message="The AI suggested changes that don't fit the board structure. I've ignored the update, but here was the message: " + (parsed.get("message") or ""),
-            board_update=None
+            message="The AI suggested changes that don't fit the board structure. "
+                   f"Here was the message: {parsed.get('message') or ''}",
+            board_update=None,
         )

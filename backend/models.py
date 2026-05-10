@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, JSON, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 import datetime
-from typing import Any
 from database import Base
 
 class User(Base):
@@ -18,7 +17,7 @@ class Board(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
-    state: Any = Column(JSON)
+    state = Column(JSON)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     owner = relationship("User", back_populates="board")
